@@ -1,0 +1,10 @@
+batch_size: 16
+dataset: rossler_train
+depth: 2
+device: cuda:0
+emb_dim: 32
+epochs: 1540
+missing: 0.05
+noise: 0.0
+seed: 42
+threshold: null
