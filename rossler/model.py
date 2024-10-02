@@ -1,3 +1,6 @@
+from typing import Self
+
+import torch
 from torch import nn
 
 from NGS.model import MLP, GraphNetworkLayer, Model
@@ -40,3 +43,14 @@ class RosslerModel(Model):
 
         # Decoders
         self.decoder = MLP(node_emb_dim, node_emb_dim, 3, last=True)
+
+    def forward(
+        self: Self,
+        state: torch.Tensor,
+        dt: torch.Tensor,
+        edge_index: torch.LongTensor,
+        batch: torch.LongTensor,
+        ptr: torch.LongTensor,
+    ) -> torch.Tensor:
+
+        return state + super().forward(state, dt, edge_index, batch, ptr)
