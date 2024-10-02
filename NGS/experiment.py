@@ -1,5 +1,6 @@
 import copy
 import time
+from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
@@ -29,6 +30,7 @@ def train(
     optimizer: optim.Optimizer,
     grad_scaler: GradScaler,
     ema: EMA,
+    loss_fn: Callable[[torch.Tensor, torch.Tensor], torch.Tensor],
     device: torch.device,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     model.train()
@@ -39,10 +41,6 @@ def train(
         batch_data = batch_data.to(device)
 
         with autocast(device.type, amp_dtype(device)):
-            # Only single step prediction allowed
-            assert len(batch_data.dts) == 1
-            assert len(batch_data.y) == 1
-
             model.cache(
                 batch_data.node_attr, batch_data.edge_attr, batch_data.glob_attr
             )
@@ -60,7 +58,7 @@ def train(
             # Do not use missing data for calculating loss
             pred_y = pred_y[~batch_data.is_missing]
             true_y = true_y[~batch_data.is_missing]
-            loss = F.mse_loss(pred_y, true_y)
+            loss = loss_fn(pred_y, true_y)
 
             with torch.no_grad():
                 mse += F.mse_loss(pred_y, true_y)
@@ -95,7 +93,7 @@ def validate(
             for dt in batch_data.dts:
                 state = model(
                     state=state,  # [BN, state_dim]
-                    dt=dt,  # [B, 1]
+                    dt=dt,  # [B, 1], For traffic forecasting, [B, 0]
                     edge_index=batch_data.edge_index,  # [2, BE]
                     batch=batch_data.batch,  # [BN, ]
                     ptr=batch_data.ptr,  # [B+1, ]
@@ -178,9 +176,17 @@ def run(
     train_loader = get_loader(train_dataset, shuffle=True, batch_size=hp.batch_size)
     val_loader = get_loader(val_dataset, shuffle=False, batch_size=hp.batch_size)
 
-    # Optimizer, scheduler, gradient scaler, ema
+    # loss function, optimizer, scheduler, gradient scaler, ema
+    if hp.loss == "mse":
+        loss_fn = F.mse_loss
+    elif hp.loss == "mae":
+        loss_fn = F.l1_loss
+    else:
+        raise ValueError(f"Invalid loss function: {hp.loss}")
     optimizer = optim.AdamW(model.parameters(), lr=1e-5, weight_decay=1e-2)
-    scheduler = CosineScheduler(optimizer)
+    scheduler = CosineScheduler(
+        optimizer, hp.lr_max, hp.period, hp.warmup, hp.lr_max_mult, hp.period_mult
+    )
     grad_scaler = GradScaler()
     ema = EMA(model)
 
@@ -199,7 +205,7 @@ def run(
     for epoch in range(hp.epochs):
         # Train
         train_mse, train_mae = train(
-            model, train_loader, optimizer, grad_scaler, ema, device
+            model, train_loader, optimizer, grad_scaler, ema, loss_fn, device
         )
         scheduler.step()  # update learning rate scheduler
 

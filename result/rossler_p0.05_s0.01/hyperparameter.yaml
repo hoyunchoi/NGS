@@ -5,7 +5,14 @@ device: cuda:0
 dropout: 0.0
 emb_dim: 32
 epochs: 1540
+loss: mse
+lr: 1.0e-05
+lr_max: 0.001
+lr_max_mult: 0.5
 missing: 0.05
 noise: 0.01
+period: 200
+period_mult: 1.0
 seed: 42
 threshold: null
+warmup: 20

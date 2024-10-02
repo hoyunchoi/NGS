@@ -19,7 +19,16 @@ class HyperParameter:
     dropout: float
     threshold: float | None
 
+    # Learning rate scheduler
+    lr: float
+    lr_max: float
+    lr_max_mult: float
+    period: int
+    period_mult: float
+    warmup: int
+
     # Training settings
+    loss: str
     device: str
     epochs: int
     batch_size: int

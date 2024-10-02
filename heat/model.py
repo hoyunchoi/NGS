@@ -51,5 +51,4 @@ class HeatModel(Model):
         batch: torch.LongTensor,
         ptr: torch.LongTensor,
     ) -> torch.Tensor:
-
         return state + super().forward(state, dt, edge_index, batch, ptr)

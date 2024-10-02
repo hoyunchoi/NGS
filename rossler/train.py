@@ -14,7 +14,6 @@ from rossler.model import RosslerModel
 
 
 def main() -> None:
-
     # Random experiment ID
     exp_id = "".join(np.random.choice(list(string.ascii_lowercase + string.digits), 8))
 
@@ -27,6 +26,13 @@ def main() -> None:
         depth=2,
         dropout=0.0,
         threshold=None,
+        lr=1e-5,
+        lr_max=1e-3,
+        period=200,
+        warmup=20,
+        lr_max_mult=0.5,
+        period_mult=1.0,
+        loss="mse",
         device="cuda:0",
         epochs=1540,
         batch_size=16,
@@ -41,7 +47,7 @@ def main() -> None:
     add_missing(train, hp.missing, seed_missing)
     add_noise(train, hp.noise, seed_noise)
 
-    # Dataset for train, validation, rollout validation
+    # Dataset for train, validation
     train_dataset = NGSDataset(**train, window=1)
     val_dataset = NGSDataset(**val, window=-1)
 

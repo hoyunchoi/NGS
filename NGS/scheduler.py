@@ -36,11 +36,11 @@ class CosineScheduler(LRScheduler):
     def __init__(
         self,
         optimizer: optim.Optimizer,
-        lr_max: float = 1e-3,
-        period: int = 200,
-        warmup: int = 20,
-        lr_max_mult: float = 0.5,
-        period_mult: float = 1.0,
+        lr_max: float,
+        period: int,
+        warmup: int,
+        lr_max_mult: float,
+        period_mult: float,
         last_epoch: int = -1,
     ) -> None:
         # Check input
