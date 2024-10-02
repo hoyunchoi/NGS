@@ -25,6 +25,7 @@ def main() -> None:
         noise=0.001,
         emb_dim=32,
         depth=2,
+        dropout=0.0,
         threshold=None,
         device="cuda:0",
         epochs=1540,
@@ -46,7 +47,7 @@ def main() -> None:
     rollout_dataset = NGSDataset(**val, window=-1)
 
     # Model
-    model = RosslerModel(hp.emb_dim, hp.depth)
+    model = RosslerModel(hp.emb_dim, hp.depth, hp.dropout)
 
     print(f"Start running {exp_id=}")
     run(exp_id, hp, model, train_dataset, val_dataset, rollout_dataset)

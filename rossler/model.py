@@ -1,9 +1,10 @@
-from NGS.model import MLP, GraphNetworkLayer, Model
 from torch import nn
+
+from NGS.model import MLP, GraphNetworkLayer, Model
 
 
 class RosslerModel(Model):
-    def __init__(self, emb_dim: int = 32, depth: int = 2) -> None:
+    def __init__(self, emb_dim, depth: int, dropout: float) -> None:
         """
         state emb: x, y, z
         dt emb: dt
@@ -33,7 +34,7 @@ class RosslerModel(Model):
 
         # Graph Network Layers
         self.gn_layers = nn.ModuleList(
-            GraphNetworkLayer(node_emb_dim, edge_emb_dim, glob_emb_dim)
+            GraphNetworkLayer(node_emb_dim, edge_emb_dim, glob_emb_dim, dropout)
             for _ in range(depth)
         )
 

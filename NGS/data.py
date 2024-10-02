@@ -7,8 +7,9 @@ import pandas as pd
 import torch
 import torch_geometric.data as gData
 import torch_geometric.loader as gLoader
-from graph.utils import directed2undirected, repeat_weight
 from torch.utils.data import Dataset
+
+from graph.utils import directed2undirected, repeat_weight
 
 arr32 = npt.NDArray[np.float32]
 arr64 = npt.NDArray[np.float64]
@@ -76,7 +77,7 @@ def preprocess(
         edge_attrs.append(edge_attr)  # Ns * [E, edge_dim]
 
     dts: list[arr32] = df.eval_time.map(  # Ns * [S, 1]
-        lambda x: np.diff(x.astype(np.float32))[:, None]
+        lambda x: np.diff(x.astype(np.float32))[:, None]  # type: ignore
     ).tolist()
     glob_attrs: list[arr32] = [  # Ns * [1, glob_dim]
         ga.astype(np.float32) for ga in df.glob_attr
@@ -280,17 +281,18 @@ class NGSDataset(Dataset):
                 continue
 
             for step in range(num_steps - window):
-                ngs_data = NGSData(
-                    x=trajectory[step],  # [N, state_dim]
-                    dts=dt[step : step + window].unsqueeze(-1),  # [W, 1, 1]
-                    node_attr=node_attr,  # [N, node_dim]
-                    edge_attr=edge_attr,  # [E, edge_dim]
-                    glob_attr=glob_attr,  # [1, glob_dim]
-                    edge_index=edge_index,  # [2, E]
-                    is_missing=is_missing,  # [N, ]
-                    y=trajectory[step + 1 : step + window + 1],  # [W, N, state_dim]
+                self.data.append(
+                    NGSData(
+                        x=trajectory[step],  # [N, state_dim]
+                        dts=dt[step : step + window].unsqueeze(-1),  # [W, 1, 1]
+                        node_attr=node_attr,  # [N, node_dim]
+                        edge_attr=edge_attr,  # [E, edge_dim]
+                        glob_attr=glob_attr,  # [1, glob_dim]
+                        edge_index=edge_index,  # [2, E]
+                        is_missing=is_missing,  # [N, ]
+                        y=trajectory[step + 1 : step + window + 1],  # [W, N, state_dim]
+                    )
                 )
-                self.data.append(ngs_data)
 
     def __len__(self) -> int:
         return len(self.data)

@@ -23,8 +23,9 @@ def main() -> None:
         seed=42,
         missing=0.0,
         noise=0.0,
-        emb_dim=32,
         depth=2,
+        emb_dim=32,
+        dropout=0.0,
         threshold=0.5235987756,
         device="cuda:0",
         epochs=1540,
@@ -47,7 +48,7 @@ def main() -> None:
 
     # Model
     assert hp.threshold is not None
-    model = KuramotoModel(hp.emb_dim, hp.depth)
+    model = KuramotoModel(hp.emb_dim, hp.depth, hp.dropout)
     model.threshold = hp.threshold
 
     print(f"Start running {exp_id=}")

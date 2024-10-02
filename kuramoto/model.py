@@ -2,12 +2,13 @@ import itertools
 from typing import Self, cast
 
 import torch
-from NGS.model import MLP, GraphNetworkLayer, Model, OneEncoder
 from torch import nn
+
+from NGS.model import MLP, GraphNetworkLayer, Model, OneEncoder
 
 
 class KuramotoModel(Model):
-    def __init__(self, emb_dim: int = 32, depth: int = 2) -> None:
+    def __init__(self, emb_dim: int, depth: int, dropout: float) -> None:
         """
         state emb: cos(phase), sin(phase)
         dt emb: dt
@@ -37,7 +38,7 @@ class KuramotoModel(Model):
 
         # Graph Network Layers
         self.gn_layers = nn.ModuleList(
-            GraphNetworkLayer(node_emb_dim, edge_emb_dim, glob_emb_dim)
+            GraphNetworkLayer(node_emb_dim, edge_emb_dim, glob_emb_dim, dropout)
             for _ in range(depth)
         )
 
@@ -79,9 +80,9 @@ class KuramotoModel(Model):
         self._cached["edge"] = self.edge_encoder(edge_attr)  # [BE, edge_emb_dim]
 
         # Change state to cos/sin representation: [BN, 2]
-        state = torch.cat([state.cos(), state.sin()], dim=-1)
+        state_cos_sin = torch.cat([state.cos(), state.sin()], dim=-1)
 
-        return super().forward(state, dt, edge_index, batch, ptr)
+        return state + super().forward(state_cos_sin, dt, edge_index, batch, ptr)
 
     @torch.no_grad()
     def get_edge_index(self: Self, phase: torch.Tensor) -> torch.LongTensor:

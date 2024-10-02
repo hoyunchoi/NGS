@@ -26,7 +26,12 @@ def prune_state_dict(state_dict: dict[str, torch.Tensor]) -> dict[str, torch.Ten
 
 class MLP(nn.Module):
     def __init__(
-        self, in_dim: int, hidden_dim: int, out_dim: int, last: bool = False
+        self,
+        in_dim: int,
+        hidden_dim: int,
+        out_dim: int,
+        dropout: float = 0.0,
+        last: bool = False,
     ) -> None:
         """
         Create 2-layer MLP module of shape in_dim -> hidden -> out_dim
@@ -40,6 +45,7 @@ class MLP(nn.Module):
         layers: list[nn.Module] = [
             nn.Linear(in_dim, hidden_dim),
             nn.GELU(),
+            nn.Dropout(dropout),
             nn.Linear(hidden_dim, out_dim),
         ]
         if not last:
@@ -53,20 +59,21 @@ class MLP(nn.Module):
 
 class GraphNetworkLayer(nn.Module):
     def __init__(
-        self,
-        node_emb_dim: int,
-        edge_emb_dim: int,
-        glob_emb_dim: int,
+        self, node_emb_dim: int, edge_emb_dim: int, glob_emb_dim: int, dropout: float
     ) -> None:
         super().__init__()
         edge_hidden_dim = 2 * node_emb_dim + edge_emb_dim + glob_emb_dim
-        self.per_edge_update = MLP(edge_hidden_dim, edge_hidden_dim, edge_emb_dim)
+        self.per_edge_update = MLP(
+            edge_hidden_dim, edge_hidden_dim, edge_emb_dim, dropout
+        )
 
         node_hidden_dim = node_emb_dim + edge_emb_dim + glob_emb_dim
-        self.per_node_update = MLP(node_hidden_dim, node_hidden_dim, node_emb_dim)
+        self.per_node_update = MLP(
+            node_hidden_dim, node_hidden_dim, node_emb_dim, dropout
+        )
 
         glob_hidden_dim = node_emb_dim + edge_emb_dim + glob_emb_dim
-        self.glob_update = MLP(glob_hidden_dim, glob_hidden_dim, glob_emb_dim)
+        self.glob_update = MLP(glob_hidden_dim, glob_hidden_dim, glob_emb_dim, dropout)
 
     def forward(
         self: Self,
@@ -140,13 +147,13 @@ class OneEncoder(nn.Module):
 
 
 class Model(nn.Module, ABC):
-    state_encoder: MLP
-    dt_encoder: MLP
-    node_encoder: MLP | OneEncoder | nn.Identity
-    edge_encoder: MLP | OneEncoder | nn.Identity
-    glob_encoder: MLP | OneEncoder | nn.Identity
+    state_encoder: nn.Module
+    dt_encoder: nn.Module
+    node_encoder: nn.Module
+    edge_encoder: nn.Module
+    glob_encoder: nn.Module
     gn_layers: nn.ModuleList
-    decoder: MLP
+    decoder: nn.Module
 
     # Cached embeddings for node, edge, glob coefficients
     # Only used for rollout prediction
@@ -224,4 +231,4 @@ class Model(nn.Module, ABC):
             )
 
         # Decoding: [BN, node_emb_dim + state_emb_dim] -> [BN, state_dim]
-        return state + self.decoder(node_emb)
+        return self.decoder(node_emb)

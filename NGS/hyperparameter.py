@@ -16,6 +16,7 @@ class HyperParameter:
     # Model, threshold for kuramoto system
     depth: int
     emb_dim: int
+    dropout: float
     threshold: float | None
 
     # Training settings

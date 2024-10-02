@@ -1,9 +1,12 @@
-from NGS.model import MLP, GraphNetworkLayer, Model
+from typing import Self
+import torch
 from torch import nn
+
+from NGS.model import MLP, GraphNetworkLayer, Model
 
 
 class HeatModel(Model):
-    def __init__(self, emb_dim: int = 8, depth: int = 2) -> None:
+    def __init__(self, emb_dim: int, depth: int, dropout: float) -> None:
         """
         state emb: temperature
         dt emb: dt
@@ -33,9 +36,20 @@ class HeatModel(Model):
 
         # Graph Network Layers
         self.gn_layers = nn.ModuleList(
-            GraphNetworkLayer(node_emb_dim, edge_emb_dim, glob_emb_dim)
+            GraphNetworkLayer(node_emb_dim, edge_emb_dim, glob_emb_dim, dropout)
             for _ in range(depth)
         )
 
         # Decoders
         self.decoder = MLP(node_emb_dim, node_emb_dim, 1, last=True)
+
+    def forward(
+        self: Self,
+        state: torch.Tensor,
+        dt: torch.Tensor,
+        edge_index: torch.LongTensor,
+        batch: torch.LongTensor,
+        ptr: torch.LongTensor,
+    ) -> torch.Tensor:
+
+        return state + super().forward(state, dt, edge_index, batch, ptr)
