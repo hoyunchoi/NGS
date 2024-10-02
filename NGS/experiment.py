@@ -170,7 +170,6 @@ def run(
     model: Model,
     train_dataset: NGSDataset,
     val_dataset: NGSDataset,
-    rollout_dataset: NGSDataset,
 ) -> None:
     device = torch.device(hp.device)
     model = model.to(device)
@@ -178,9 +177,6 @@ def run(
     # Create data loaders
     train_loader = get_loader(train_dataset, shuffle=True, batch_size=hp.batch_size)
     val_loader = get_loader(val_dataset, shuffle=False, batch_size=hp.batch_size)
-    rollout_loader = get_loader(
-        rollout_dataset, shuffle=False, batch_size=hp.batch_size
-    )
 
     # Optimizer, scheduler, gradient scaler, ema
     optimizer = optim.AdamW(model.parameters(), lr=1e-5, weight_decay=1e-2)
@@ -189,7 +185,7 @@ def run(
     ema = EMA(model)
 
     # Best state dictionaries
-    best_rollout_mae = float("inf")
+    best_val_mae = float("inf")
     model_state_dict = copy.deepcopy(model.state_dict())
     ema_state_dict = copy.deepcopy(ema.state_dict())
 
@@ -198,8 +194,6 @@ def run(
     train_maes: list[torch.Tensor] = []
     val_mses: list[torch.Tensor] = []
     val_maes: list[torch.Tensor] = []
-    rollout_mses: list[torch.Tensor] = []
-    rollout_maes: list[torch.Tensor] = []
 
     # --------------- Start training ---------------
     for epoch in range(hp.epochs):
@@ -216,22 +210,17 @@ def run(
         # Validation
         with ema():
             val_mse, val_mae = validate(model, val_loader, device)
-            rollout_mse, rollout_mae = validate(model, rollout_loader, device)
 
         # Store result of current epoch
         train_mses.append(train_mse)
         train_maes.append(train_mae)
         val_mses.append(val_mse)
         val_maes.append(val_mae)
-        rollout_mses.append(rollout_mse)
-        rollout_maes.append(rollout_mae)
 
         # Check best validation error
-        if rollout_mae < best_rollout_mae:
-            print(
-                f"Best at {epoch=}, {train_mae=:.4e}, {val_mae=:.4e}, {rollout_mae=:.4e}"
-            )
-            best_rollout_mae = rollout_mae.item()
+        if val_mae < best_val_mae:
+            print(f"Best at {epoch=}, {train_mae=:.4e}, {val_mae=:.4e}")
+            best_val_mae = val_mae.item()
             model_state_dict = copy.deepcopy(model.state_dict())
             ema_state_dict = copy.deepcopy(ema.state_dict())
 
@@ -253,8 +242,6 @@ def run(
             "train_mae": [mae.item() for mae in train_maes],
             "val_mse": [mse.item() for mse in val_mses],
             "val_mae": [mae.item() for mae in val_maes],
-            "rollout_mse": [mse.item() for mse in rollout_mses],
-            "rollout_mae": [mae.item() for mae in rollout_maes],
         }
     )
     loss_df.to_csv(result_dir / "loss.txt", sep="\t", index=False)

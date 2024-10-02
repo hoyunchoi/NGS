@@ -43,14 +43,13 @@ def main() -> None:
 
     # Dataset for train, validation, rollout validation
     train_dataset = NGSDataset(**train, window=1)
-    val_dataset = NGSDataset(**val, window=1)
-    rollout_dataset = NGSDataset(**val, window=-1)
+    val_dataset = NGSDataset(**val, window=-1)
 
     # Model
     model = RosslerModel(hp.emb_dim, hp.depth, hp.dropout)
 
     print(f"Start running {exp_id=}")
-    run(exp_id, hp, model, train_dataset, val_dataset, rollout_dataset)
+    run(exp_id, hp, model, train_dataset, val_dataset)
 
 
 if __name__ == "__main__":

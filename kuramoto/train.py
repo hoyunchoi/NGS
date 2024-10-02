@@ -4,7 +4,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import torch_geometric.loader as gLoader
 
 sys.path.append(str(Path(__file__).parents[1]))
 from kuramoto.model import KuramotoModel
@@ -43,8 +42,7 @@ def main() -> None:
 
     # Dataset for train, validation, rollout validation
     train_dataset = NGSDataset(**train, window=1)
-    val_dataset = NGSDataset(**val, window=1)
-    rollout_dataset = NGSDataset(**val, window=-1)
+    val_dataset = NGSDataset(**val, window=-1)
 
     # Model
     assert hp.threshold is not None
@@ -52,7 +50,7 @@ def main() -> None:
     model.threshold = hp.threshold
 
     print(f"Start running {exp_id=}")
-    run(exp_id, hp, model, train_dataset, val_dataset, rollout_dataset)
+    run(exp_id, hp, model, train_dataset, val_dataset)
 
 
 if __name__ == "__main__":
