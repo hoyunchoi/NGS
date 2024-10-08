@@ -16,3 +16,4 @@ period_mult: 1.0
 seed: 42
 threshold: 2.0
 warmup: 20
+weight_decay: 0.01

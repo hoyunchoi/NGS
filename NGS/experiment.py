@@ -183,7 +183,7 @@ def run(
         loss_fn = F.l1_loss
     else:
         raise ValueError(f"Invalid loss function: {hp.loss}")
-    optimizer = optim.AdamW(model.parameters(), lr=1e-5, weight_decay=1e-2)
+    optimizer = optim.AdamW(model.parameters(), lr=hp.lr, weight_decay=hp.weight_decay)
     scheduler = CosineScheduler(
         optimizer, hp.lr_max, hp.period, hp.warmup, hp.lr_max_mult, hp.period_mult
     )

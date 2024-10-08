@@ -29,6 +29,7 @@ class HyperParameter:
 
     # Training settings
     loss: str
+    weight_decay: float
     device: str
     epochs: int
     batch_size: int

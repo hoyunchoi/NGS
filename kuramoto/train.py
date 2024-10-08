@@ -33,6 +33,7 @@ def main() -> None:
         lr_max_mult=0.5,
         period_mult=1.0,
         loss="mse",
+        weight_decay=0.01,
         device="cuda:0",
         epochs=1540,
         batch_size=16,
